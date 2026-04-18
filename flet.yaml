@@ -1,1 +1,11 @@
+name: "AirVpn"
+package_name: "com.airvpn.free"
+version: "1.2.4"
 
+android:
+  permissions:
+    - CAMERA
+    - INTERNET
+    - FOREGROUND_SERVICE
+    - WAKE_LOCK
+    - WRITE_EXTERNAL_STORAGE
